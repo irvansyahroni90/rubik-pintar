@@ -1,0 +1,140 @@
+// Kumpulan rumus (algoritma). Setiap rumus divalidasi oleh tes otomatis (tests/algs.test.mjs).
+
+export const OLL = [
+  { id: 1, name: 'OLL 1 (Titik)', alg: "R U2 R2 F R F' U2 R' F R F'" },
+  { id: 2, name: 'OLL 2 (Titik)', alg: "F R U R' U' F' f R U R' U' f'" },
+  { id: 3, name: 'OLL 3 (Titik)', alg: "f R U R' U' f' U' F R U R' U' F'" },
+  { id: 4, name: 'OLL 4 (Titik)', alg: "f R U R' U' f' U F R U R' U' F'" },
+  { id: 5, name: 'OLL 5 (Persegi)', alg: "r' U2 R U R' U r" },
+  { id: 6, name: 'OLL 6 (Persegi)', alg: "r U2 R' U' R U' r'" },
+  { id: 7, name: 'OLL 7 (Kilat)', alg: "r U R' U R U2 r'" },
+  { id: 8, name: 'OLL 8 (Kilat)', alg: "r' U' R U' R' U2 r" },
+  { id: 9, name: 'OLL 9 (Ikan)', alg: "R U R' U' R' F R2 U R' U' F'" },
+  { id: 10, name: 'OLL 10 (Ikan)', alg: "R U R' U R' F R F' R U2 R'" },
+  { id: 11, name: 'OLL 11 (Kilat)', alg: "r U R' U R' F R F' R U2 r'" },
+  { id: 12, name: 'OLL 12 (Kilat)', alg: "M' R' U' R U' R' U2 R U' R r'" },
+  { id: 13, name: 'OLL 13 (Bentuk P)', alg: "F U R U' R2 F' R U R U' R'" },
+  { id: 14, name: 'OLL 14 (Bentuk P)', alg: "R' F R U R' F' R F U' F'" },
+  { id: 15, name: 'OLL 15 (Bentuk P)', alg: "r' U' r R' U' R U r' U r" },
+  { id: 16, name: 'OLL 16 (Bentuk P)', alg: "r U r' R U R' U' r U' r'" },
+  { id: 17, name: 'OLL 17 (Titik)', alg: "F R' F' R2 r' U R U' R' U' M'" },
+  { id: 18, name: 'OLL 18 (Titik)', alg: "r U R' U R U2 r2 U' R U' R' U2 r" },
+  { id: 19, name: 'OLL 19 (Titik)', alg: "r' R U R U R' U' M' R' F R F'" },
+  { id: 20, name: 'OLL 20 (Titik)', alg: "r U R' U' M2 U R U' R' U' M'" },
+  { id: 21, name: 'OLL 21 (H)', alg: "R U2 R' U' R U R' U' R U' R'" },
+  { id: 22, name: 'OLL 22 (Pi)', alg: "R U2 R2 U' R2 U' R2 U2 R" },
+  { id: 23, name: 'OLL 23 (Lampu Depan)', alg: "R2 D' R U2 R' D R U2 R" },
+  { id: 24, name: 'OLL 24 (T / Chameleon)', alg: "r U R' U' r' F R F'" },
+  { id: 25, name: 'OLL 25 (Dasi Kupu-kupu)', alg: "F' r U R' U' r' F R" },
+  { id: 26, name: 'OLL 26 (Anti-Sune)', alg: "R U2 R' U' R U' R'" },
+  { id: 27, name: 'OLL 27 (Sune)', alg: "R U R' U R U2 R'" },
+  { id: 28, name: 'OLL 28 (Panah)', alg: "r U R' U' r' R U R U' R'" },
+  { id: 29, name: 'OLL 29 (Awkward)', alg: "R U R' U' R U' R' F' U' F R U R'" },
+  { id: 30, name: 'OLL 30 (Awkward)', alg: "F R' F R2 U' R' U' R U R' F2" },
+  { id: 31, name: 'OLL 31 (Bentuk P)', alg: "R' U' F U R U' R' F' R" },
+  { id: 32, name: 'OLL 32 (Bentuk P)', alg: "L U F' U' L' U L F L'" },
+  { id: 33, name: 'OLL 33 (Bentuk T)', alg: "R U R' U' R' F R F'" },
+  { id: 34, name: 'OLL 34 (Bentuk C)', alg: "R U R2 U' R' F R U R U' F'" },
+  { id: 35, name: 'OLL 35 (Ikan)', alg: "R U2 R2 F R F' R U2 R'" },
+  { id: 36, name: 'OLL 36 (Bentuk W)', alg: "L' U' L U' L' U L U L F' L' F" },
+  { id: 37, name: 'OLL 37 (Ikan)', alg: "F R' F' R U R U' R'" },
+  { id: 38, name: 'OLL 38 (Bentuk W)', alg: "R U R' U R U' R' U' R' F R F'" },
+  { id: 39, name: 'OLL 39 (Kilat Besar)', alg: "L F' L' U' L U F U' L'" },
+  { id: 40, name: 'OLL 40 (Kilat Besar)', alg: "R' F R U R' U' F' U R" },
+  { id: 41, name: 'OLL 41 (Awkward)', alg: "R U R' U R U2 R' F R U R' U' F'" },
+  { id: 42, name: 'OLL 42 (Awkward)', alg: "R' U' R U' R' U2 R F R U R' U' F'" },
+  { id: 43, name: 'OLL 43 (Bentuk P)', alg: "F' U' L' U L F" },
+  { id: 44, name: 'OLL 44 (Bentuk P)', alg: "F U R U' R' F'" },
+  { id: 45, name: 'OLL 45 (Bentuk T)', alg: "F R U R' U' F'" },
+  { id: 46, name: 'OLL 46 (Bentuk C)', alg: "R' U' R' F R F' U R" },
+  { id: 47, name: 'OLL 47 (Bentuk L)', alg: "R' U' R' F R F' R' F R F' U R" },
+  { id: 48, name: 'OLL 48 (Bentuk L)', alg: "F R U R' U' R U R' U' F'" },
+  { id: 49, name: 'OLL 49 (Bentuk L)', alg: "r U' r2 U r2 U r2 U' r" },
+  { id: 50, name: 'OLL 50 (Bentuk L)', alg: "r' U r2 U' r2 U' r2 U r'" },
+  { id: 51, name: 'OLL 51 (Garis)', alg: "F U R U' R' U R U' R' F'" },
+  { id: 52, name: 'OLL 52 (Garis)', alg: "R U R' U R U' B U' B' R'" },
+  { id: 53, name: 'OLL 53 (Bentuk L)', alg: "r' U' R U' R' U R U' R' U2 r" },
+  { id: 54, name: 'OLL 54 (Bentuk L)', alg: "r U R' U R U' R' U R U2 r'" },
+  { id: 55, name: 'OLL 55 (Garis)', alg: "R' F R U R U' R2 F' R2 U' R' U R U R'" },
+  { id: 56, name: 'OLL 56 (Garis)', alg: "r' U' r U' R' U R U' R' U R r' U r" },
+  { id: 57, name: 'OLL 57 (H Tengah)', alg: "R U R' U' M' U R U' r'" },
+];
+
+export const PLL = [
+  { id: 'Aa', name: 'Aa-perm', alg: "x R' U R' D2 R U' R' D2 R2 x'" },
+  { id: 'Ab', name: 'Ab-perm', alg: "x R2 D2 R U R' D2 R U' R x'" },
+  { id: 'E', name: 'E-perm', alg: "x' R U' R' D R U R' D' R U R' D R U' R' D' x" },
+  { id: 'F', name: 'F-perm', alg: "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R" },
+  { id: 'Ga', name: 'Ga-perm', alg: "R2 U R' U R' U' R U' R2 U' D R' U R D'" },
+  { id: 'Gb', name: 'Gb-perm', alg: "R' U' R U D' R2 U R' U R U' R U' R2 D" },
+  { id: 'Gc', name: 'Gc-perm', alg: "R2 U' R U' R U R' U R2 U D' R U' R' D" },
+  { id: 'Gd', name: 'Gd-perm', alg: "R U R' U' D R2 U' R U' R' U R' U R2 D'" },
+  { id: 'H', name: 'H-perm', alg: "M2 U M2 U2 M2 U M2" },
+  { id: 'Ja', name: 'Ja-perm', alg: "R' U L' U2 R U' R' U2 R L" },
+  { id: 'Jb', name: 'Jb-perm', alg: "R U R' F' R U R' U' R' F R2 U' R'" },
+  { id: 'Na', name: 'Na-perm', alg: "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'" },
+  { id: 'Nb', name: 'Nb-perm', alg: "R' U R U' R' F' U' F R U R' F R' F' R U' R" },
+  { id: 'Ra', name: 'Ra-perm', alg: "R U' R' U' R U R D R' U' R D' R' U2 R'" },
+  { id: 'Rb', name: 'Rb-perm', alg: "R2 F R U R U' R' F' R U2 R' U2 R" },
+  { id: 'T', name: 'T-perm', alg: "R U R' U' R' F R2 U' R' U' R U R' F'" },
+  { id: 'Ua', name: 'Ua-perm', alg: "M2 U M U2 M' U M2" },
+  { id: 'Ub', name: 'Ub-perm', alg: "M2 U' M U2 M' U' M2" },
+  { id: 'V', name: 'V-perm', alg: "R U' R U R' D R D' R U' D R2 U R2 D' R2" },
+  { id: 'Y', name: 'Y-perm', alg: "F R U' R' U' R U R' F' R U R' U' R' F R F'" },
+  { id: 'Z', name: 'Z-perm', alg: "M' U M2 U M2 U M' U2 M2" },
+];
+
+// CFOP pemula: 2-look OLL & 2-look PLL
+export const OLL2_EDGES = [
+  { id: 'I', name: 'Garis', alg: "F R U R' U' F'" },
+  { id: 'L', name: 'Huruf L', alg: "f R U R' U' f'" },
+  { id: 'Dot', name: 'Titik', alg: "F R U R' U' F' f R U R' U' f'" },
+];
+export const OLL2_CORNERS = [
+  { id: 'Sune', name: 'Sune', alg: "R U R' U R U2 R'" },
+  { id: 'AntiSune', name: 'Anti-Sune', alg: "R U2 R' U' R U' R'" },
+  { id: 'H', name: 'H', alg: "R U2 R' U' R U R' U' R U' R'" },
+  { id: 'Pi', name: 'Pi', alg: "R U2 R2 U' R2 U' R2 U2 R" },
+  { id: 'Headlights', name: 'Lampu Depan (U)', alg: "R2 D' R U2 R' D R U2 R" },
+  { id: 'T', name: 'T', alg: "r U R' U' r' F R F'" },
+  { id: 'Bowtie', name: 'Dasi Kupu-kupu (L)', alg: "F' r U R' U' r' F R" },
+];
+export const PLL2_CORNERS = [
+  { id: 'T', name: 'T-perm (tukar sudut bersebelahan)', alg: "R U R' U' R' F R2 U' R' U' R U R' F'" },
+  { id: 'Y', name: 'Y-perm (tukar sudut diagonal)', alg: "F R U' R' U' R U R' F' R U R' U' R' F R F'" },
+];
+export const PLL2_EDGES = [
+  { id: 'Ua', name: 'Ua-perm', alg: "M2 U M U2 M' U M2" },
+  { id: 'Ub', name: 'Ub-perm', alg: "M2 U' M U2 M' U' M2" },
+  { id: 'H', name: 'H-perm', alg: "M2 U M2 U2 M2 U M2" },
+  { id: 'Z', name: 'Z-perm', alg: "M' U M2 U M2 U M' U2 M2" },
+];
+
+// 2x2 Ortega
+export const ORTEGA_OLL = [
+  { id: 'Sune', name: 'Sune', alg: "R U R' U R U2 R'" },
+  { id: 'AntiSune', name: 'Anti-Sune', alg: "R U2 R' U' R U' R'" },
+  { id: 'H', name: 'H', alg: "R2 U2 R U2 R2" },
+  { id: 'Pi', name: 'Pi', alg: "F R U R' U' R U R' U' F'" },
+  { id: 'U', name: 'U (Lampu Depan)', alg: "F R U R' U' F'" },
+  { id: 'T', name: 'T', alg: "R U R' U' R' F R F'" },
+  { id: 'L', name: 'L (Dasi Kupu-kupu)', alg: "F R' F' R U R U' R'" },
+];
+export const ORTEGA_PBL = [
+  { id: 'adj-top', name: 'Tukar sebelah (atas)', alg: "R U2 R' U' R U2 L' U R' U' L" },
+  { id: 'diag-top', name: 'Tukar diagonal (atas)', alg: "F R U' R' U' R U R' F' R U R' U' R' F R F'" },
+  { id: 'diag-diag', name: 'Diagonal dua lapis', alg: "R2 F2 R2" },
+  { id: 'adj-adj', name: 'Sebelah dua lapis', alg: "R2 U' B2 U2 R2 U' R2" },
+  { id: 'adj-diag', name: 'Sebelah atas, diagonal bawah', alg: "R U' R F2 R' U R'" },
+  { id: 'diag-adj', name: 'Diagonal atas, sebelah bawah', alg: "R' U R' F2 R F' R" },
+  { id: 'adj-bot', name: 'Tukar sebelah (bawah)', alg: "R2 U R2 U' R2 U' D R2 U' R2 U R2 D'" },
+  { id: 'diag-bot', name: 'Tukar diagonal (bawah)', alg: "R2 U R2 U2 F2 U F2" },
+];
+
+// Rumus parity kubus besar (lapisan dalam: 2R = lapisan ke-2 dari kanan)
+export const PARITY = {
+  oll4: "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",
+  oll4alt: "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+  pll4: "2R2 U2 2R2 Uw2 2R2 2U2",
+  edge5: "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",
+};
