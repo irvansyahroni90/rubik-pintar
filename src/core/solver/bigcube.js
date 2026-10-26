@@ -136,18 +136,20 @@ function centerCommutator(cs, I, ti, col, target, locked) {
   return best ? best.toks : null;
 }
 
-export function stageCenters(ctx, scheme) {
+export function stageCenters(ctx, scheme, opts = {}) {
   const N = ctx.N;
   const I = centerInfo(N);
   const len = I.idx.length;
   const target = Uint8Array.from(I.face.map((f) => scheme[f]));
   const locked = new Uint8Array(len);
   I.fixed.forEach((fx, i) => { if (fx) locked[i] = 1; });
-  ctx.stage('centers', N === 4 ? 'Center (4 keping per sisi)' : 'Center (9 keping per sisi)',
-    `Kumpulkan keping tengah tiap sisi sampai warnanya seragam: ${['D', 'U', 'F', 'R', 'B', 'L'].map((f) => ce(scheme[FACE_ID[f]])).join(' ')}. Mulai dari bawah ${ce(scheme[3])}, lalu atas ${ce(scheme[0])}, lalu 4 sisi samping.`,
-    ['Gerakan lapisan dalam (2R, 2U, …) memindahkan keping center antarsisi.', 'Selalu kembalikan lapisan dalam setelah menyisipkan keping (misal 2R U 2R\').', 'Sisi yang sudah jadi boleh diputar (U/D) tanpa merusaknya.',
+  // sisi yang sudah jadi sebelumnya: kunci supaya tidak dirusak
+  for (const f of opts.done || []) for (let i = 0; i < len; i++) if (I.face[i] === f) locked[i] = 1;
+  ctx.stage(opts.key || 'centers', opts.title || (N === 4 ? 'Center (4 keping per sisi)' : 'Center (9 keping per sisi)'),
+    opts.intro || `Kumpulkan keping tengah tiap sisi sampai warnanya seragam: ${['D', 'U', 'F', 'R', 'B', 'L'].map((f) => ce(scheme[FACE_ID[f]])).join(' ')}. Mulai dari bawah ${ce(scheme[3])}, lalu atas ${ce(scheme[0])}, lalu 4 sisi samping.`,
+    opts.tips || ['Gerakan lapisan dalam (2R, 2U, …) memindahkan keping center antarsisi.', 'Selalu kembalikan lapisan dalam setelah menyisipkan keping (misal 2R U 2R\').', 'Sisi yang sudah jadi boleh diputar (U/D) tanpa merusaknya.',
       ...(N === 5 ? ['Di 5x5, center paling tengah tidak bisa pindah — dialah patokan warna sisinya.'] : ['Di 4x4 tidak ada center tetap: warna sisi mengikuti arah pegang yang kamu pilih.'])]);
-  const order = [3, 0, 2, 1, 5, 4];
+  const order = opts.faces || [3, 0, 2, 1, 5, 4];
   const FNAME = { U: 'atas', D: 'bawah', F: 'depan', R: 'kanan', B: 'belakang', L: 'kiri' };
   for (const f of order) {
     const positions = [];
@@ -177,12 +179,13 @@ export function stageCenters(ctx, scheme) {
       for (let j = sol.length - 1; j >= 0; j--) src = movePerm(N, sol[j])[src];
       ctx.step(`Center ${ce(scheme[f])} · keping ${k}/${positions.length}`,
         comm ? `Keping ${ce(col)} yang menyala dipindah ke sisi ${FNAME[FACE_NAMES[f]]} dengan "komutator" (sisipkan – putar – keluarkan – putar balik) supaya center yang sudah jadi tidak rusak.` : `Pindahkan keping ${ce(col)} yang menyala ke sisi ${FNAME[FACE_NAMES[f]]}. Lapisan dalam yang diputar langsung dikembalikan.`,
-        sol, { focus: [src] });
+        sol, { focus: [src], meta: { type: 'centerPiece', face: f, color: col, comm } });
       locked[ti] = 1;
     }
   }
-  // verifikasi
-  for (let i = 0; i < len; i++) if (ctx.state[I.idx[i]] !== target[i]) throw new Error('Center belum lengkap');
+  // verifikasi (hanya sisi yang dikerjakan & yang sudah jadi)
+  const check = new Set([...order, ...(opts.done || [])]);
+  for (let i = 0; i < len; i++) if (check.has(I.face[i]) && ctx.state[I.idx[i]] !== target[i]) throw new Error('Center belum lengkap');
 }
 
 // ---------------- EDGE PAIRING ----------------
@@ -345,7 +348,7 @@ function findPairStep(state, N, scheme) {
             if (!centersOk(ns, N, scheme)) continue;
             const m1 = pairMetric(ns, N);
             if (m1 <= m0) continue;
-            best = { mv, gain: m1 - m0 };
+            best = { mv, gain: m1 - m0, parts: [S.length, 1, uToken(k).length + M.length, 1], focus: [...X.pc, ...Y], colors: xc };
           }
         }
       });
@@ -409,7 +412,7 @@ function findPairStepWide(state, N, scheme) {
         if (!centersOk(ns, N, scheme)) continue;
         const m1 = pairMetric(ns, N);
         if (m1 <= m0) continue;
-        best = { mv: [...S, ...tail], gain: m1 - m0 };
+        best = { mv: [...S, ...tail], gain: m1 - m0, parts: [S.length, 1, tail.length - 2, 1], focus: [...E.edges[unpaired[a]].pieces.flat(), ...E.edges[unpaired[b]].pieces.flat()] };
       }
     }
     if (best) return best;
@@ -479,9 +482,15 @@ export function stageEdges(ctx, scheme) {
     }
     const mv = simplify(best.mv);
     const after = before + best.gain;
-    ctx.step(N === 4 ? `Pasangan edge ${Math.min(after, 12)}/12` : `Wing cocok ${Math.min(after, 24)}/24`,
-      'Siapkan keping dengan putaran luar, satukan dengan putaran lapisan dalam, keluarkan edge jadi (flip), lalu kembalikan lapisan dalam.',
-      mv);
+    const PART_LABEL = ['Siapkan (lapisan luar)', 'Satukan (lapisan dalam)', best.colors ? 'Keluarkan pasangan jadi' : 'Tukar (rumus 2 edge terakhir)', 'Kembalikan lapisan dalam'];
+    const parts = mv.length === best.mv.length && best.parts ? best.parts.map((n, i) => ({ label: PART_LABEL[i], n })).filter((p) => p.n > 0) : null;
+    const pairTxt = best.colors ? `keping ${best.colors.map(ce).join('')} (${best.colors.map(cn).join('-')})` : 'dua edge terakhir';
+    const st = ctx.step(N === 4 ? `Pasangan edge ${Math.min(after, 12)}/12` : `Wing cocok ${Math.min(after, 24)}/24`,
+      best.colors
+        ? `Pasangkan ${pairTxt} yang menyala: bawa keduanya ke lapisan tengah kanan-depan dengan putaran luar, satukan dengan lapisan dalam, keluarkan edge yang sudah jadi (flip), lalu kembalikan lapisan dalam supaya center utuh lagi.`
+        : 'Dua edge terakhir: taruh keduanya di lapisan tengah, satukan dengan lapisan dalam, tukar dengan rumus pendek, lalu kembalikan lapisan dalam.',
+      mv, { focus: best.focus || [], meta: { type: 'pair', last: !best.colors } });
+    if (st && parts) st.parts = parts;
   }
   if (pairMetric(ctx.state, N) < PAIR_FULL[N]) throw new Error('Pairing edge belum selesai');
 }
@@ -499,11 +508,11 @@ export function parityHooks(N) {
   if (N !== 4) return {};
   return {
     ollParity(ctx) {
-      ctx.step('OLL Parity (khusus 4x4)', 'Jumlah edge kuning yang menghadap atas ganjil — ini "OLL parity", hanya terjadi di kubus genap. Rumus panjang ini membalik satu edge depan-atas. Tenang, setelah ini lanjut normal!', PARITY.oll4, { alg: PARITY.oll4, focus: ctx.stickers('UF') });
+      ctx.step('OLL Parity (khusus 4x4)', 'Jumlah edge kuning yang menghadap atas ganjil — ini "OLL parity", hanya terjadi di kubus genap. Rumus panjang ini membalik satu edge depan-atas. Tenang, setelah ini lanjut normal!', PARITY.oll4, { alg: PARITY.oll4, focus: ctx.stickers('UF'), meta: { type: 'ollParity' } });
     },
     pllParity(ctx) {
       if (!llParityMismatch(ctx)) return;
-      ctx.step('PLL Parity (khusus 4x4)', 'Ada dua edge atas yang harus ditukar langsung — "PLL parity" khas 4x4. Rumus ini menukar edge depan-atas dengan belakang-atas.', PARITY.pll4, { alg: PARITY.pll4 });
+      ctx.step('PLL Parity (khusus 4x4)', 'Ada dua edge atas yang harus ditukar langsung — "PLL parity" khas 4x4. Rumus ini menukar edge depan-atas dengan belakang-atas.', PARITY.pll4, { alg: PARITY.pll4, focus: [...ctx.stickers('UF'), ...ctx.stickers('UB')], meta: { type: 'pllParity' } });
     },
   };
 }

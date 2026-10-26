@@ -221,14 +221,27 @@ export default function Player({ result, pos: savedPos, onPos, onExit, onNew }) 
             <div className="head"><h3>{step.title}</h3><small>{cur.m}/{step.moves.length} gerakan</small></div>
             <p>{step.text}</p>
             {hiddenHint && <p className="small" style={{ color: 'var(--blue-edge)', fontWeight: 700 }}>{hiddenHint}</p>}
-            {step.moves.length > 0 && (
-              <div className="moves" role="list">
-                {step.moves.map((t, i) => (
-                  <button key={i} role="listitem" className={(i < cur.m ? 'done' : i === cur.m ? 'now' : '') + (/^[xyz]/.test(t) ? ' rot' : '')}
-                    onClick={() => { stopPlay(); jump(cur.g, i); }} aria-label={`Gerakan ${i + 1}: ${t}`}>{t}</button>
-                ))}
-              </div>
-            )}
+            {step.moves.length > 0 && (() => {
+              const chip = (t, i) => (
+                <button key={i} role="listitem" className={(i < cur.m ? 'done' : i === cur.m ? 'now' : '') + (/^[xyz]/.test(t) ? ' rot' : '')}
+                  onClick={() => { stopPlay(); jump(cur.g, i); }} aria-label={`Gerakan ${i + 1}: ${t}`}>{t}</button>
+              );
+              if (!step.parts) return <div className="moves" role="list">{step.moves.map(chip)}</div>;
+              let from = 0;
+              return (
+                <div className="case-parts">
+                  {step.parts.map((p, pi) => {
+                    const a = from; from += p.n;
+                    return (
+                      <div key={pi} className="case-part">
+                        <span className="case-part-label">{p.label}</span>
+                        <div className="moves" role="list">{step.moves.slice(a, a + p.n).map((t, k) => chip(t, a + k))}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             {meaning && <div className="move-meaning"><b>{nowMove}</b><span>{meaning.text}</span></div>}
             {!nowMove && step.moves.length > 0 && <div className="move-meaning"><b>✓</b><span>Langkah ini selesai. Tekan ▶︎ untuk langkah berikutnya.</span></div>}
             {step.alg && <button className="btn small" onClick={() => setAlgSheet(step.alg)}>🎬 Pelajari rumus {step.alg}</button>}

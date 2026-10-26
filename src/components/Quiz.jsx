@@ -5,7 +5,7 @@ import { trackFocus } from './CaseCard.jsx';
 
 const ROUND = 5;
 
-export default function Quiz({ stageKey, onClose }) {
+export default function Quiz({ stageKey, onClose, make = makeQuestion }) {
   const [q, setQ] = useState(null);
   const [pick, setPick] = useState(undefined);
   const [score, setScore] = useState({ ok: 0, n: 0 });
@@ -19,7 +19,7 @@ export default function Quiz({ stageKey, onClose }) {
     qid.current++;
     setBusy(true);
     setTimeout(() => {
-      const nq = makeQuestion(stageKey);
+      const nq = make(stageKey);
       setQ(nq); setPick(undefined); setPlayed(false); setBusy(false);
       if (nq && ref.current) { ref.current.finishNow(); ref.current.setState(nq.state); ref.current.setFocus(nq.focus); }
     }, 30);
@@ -35,12 +35,14 @@ export default function Quiz({ stageKey, onClose }) {
     setPick(opt.id);
     setScore((s) => ({ ok: s.ok + (opt.id === q.answer ? 1 : 0), n: s.n + 1 }));
   };
+  const N = q ? q.N || 3 : 3;
   const show = async () => {
     if (!q || played) return;
     setPlayed(true);
+    if (q.reveal) { ref.current?.setState(q.reveal); return; }
     const my = qid.current;
     for (let k = 0; k < q.moves.length && alive.current && my === qid.current; k++) {
-      await ref.current?.move(q.moves[k], 480, trackFocus(q.focus, q.moves.slice(0, k + 1)));
+      await ref.current?.move(q.moves[k], N >= 4 ? 420 : 480, trackFocus(q.focus, q.moves.slice(0, k + 1), N));
     }
   };
   const restart = () => { setScore({ ok: 0, n: 0 }); next(); };
@@ -53,7 +55,7 @@ export default function Quiz({ stageKey, onClose }) {
         {onClose && <button className="btn small ghost" onClick={onClose} aria-label="Tutup kuis">✕</button>}
       </div>
       <div className="quiz-cube">
-        {q ? <CubeView ref={ref} N={3} state={q.state} focus={q.focus} dim={0.45} zoom={1.25} /> : <div className="quiz-wait">{busy ? 'Mengacak kubus…' : 'Soal tidak tersedia'}</div>}
+        {q ? <CubeView key={N} ref={ref} N={N} state={q.state} focus={q.focus} dim={N >= 4 ? 0.62 : 0.45} zoom={1.25} labels={!!q.reveal} /> : <div className="quiz-wait">{busy ? 'Mengacak kubus…' : 'Soal tidak tersedia'}</div>}
       </div>
       {q && (
         <>
@@ -76,7 +78,7 @@ export default function Quiz({ stageKey, onClose }) {
           )}
           {answered && (
             <div className="action-row">
-              <button className="btn" onClick={show} disabled={played}>{played ? 'Sudah diputar' : '▶ Lihat caranya'}</button>
+              <button className="btn" onClick={show} disabled={played}>{played ? (q.reveal ? 'Sudah ditampilkan' : 'Sudah diputar') : q.reveal ? '👀 Lihat jawabannya' : '▶ Lihat caranya'}</button>
               {finished
                 ? <button className="btn primary" onClick={restart}>Ulang kuis ({score.ok}/{ROUND})</button>
                 : <button className="btn primary" onClick={next} disabled={busy}>Soal berikutnya</button>}

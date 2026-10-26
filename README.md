@@ -21,6 +21,7 @@ Foto keenam sisi rubikmu → aplikasi mengenali warnanya → kamu memilih arah p
 | 4x4 | Reduksi (center → pairing edge → 3x3) + Pemula/CFOP, termasuk OLL & PLL parity |
 | 5x5 | Reduksi + Pemula/CFOP, termasuk parity edge 5x5 |
 
+- **Kursus 4x4** (tab Belajar, paling atas): metode reduksi untuk pemula — kenali 4x4 (keping, notasi lapisan dalam 2R/Rw, urutan warna), center putih, center kuning, 4 center samping, pasangkan edge (slice–flip–slice), dua edge terakhir, selesaikan seperti 3x3, OLL parity, dan PLL parity. Setiap tahap punya kasus beranimasi yang diverifikasi mesin, kuis (urutan warna, arah lapisan dalam, perlu parity atau tidak), dan contoh dari kubus 4x4 acak yang diselesaikan dengan urutan yang sama seperti pelajarannya.
 - **Kursus Pemula 3x3** (tab Belajar): pelajaran "Mulai di sini" (jenis keping, warna, cara membaca gerakan, langkah pertama dari kubus acak) lalu 8 tahap. Tiap tahap berisi tujuan bergambar 3D, langkah awal dari kubus acak, kasus "kalau kamu lihat ini → lakukan ini" yang bisa diputar langkah demi langkah, kesalahan umum, kuis dari kubus acak sungguhan, dan contoh tahap itu dari kubus acak. Kemajuan belajar tersimpan.
 - **Materi metode lain**: per ukuran & metode (CFOP, Ortega, Reduksi 4x4/5x5), setiap rumus bisa dianimasikan.
 - **Ensiklopedia metode**: Pemula, CFOP, Roux, ZZ, Petrus, Ortega, CLL/EG, Reduksi, Yau, Hoya.
@@ -68,7 +69,8 @@ src/
   three/GuideCube.jsx animasi panduan memutar seluruh kubus saat scan
   components/        layar aplikasi (Beranda, Scan, Editor, Setup, Player, Belajar, …)
   content/           materi belajar, kursus pemula (course.js), metode, tips
-  learn/             pembuat keadaan kasus (build.js) & kuis dari kubus acak (quiz.js)
+  learn/             pembuat keadaan kasus (build.js) & kuis/contoh dari kubus acak (quiz.js, quiz4.js)
+  core/solver/course4.js  solver 4x4 dengan urutan yang sama seperti Kursus 4x4
 tests/               tes otomatis solver, rumus, validasi, & deteksi warna
 ```
 

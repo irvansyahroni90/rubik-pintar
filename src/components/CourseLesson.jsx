@@ -5,22 +5,30 @@ import CaseCard, { LazyMount } from './CaseCard.jsx';
 import Quiz from './Quiz.jsx';
 import Player from './Player.jsx';
 import IntroLesson from './IntroLesson.jsx';
-import { COURSE, QUIZ_KEYS } from '../content/course.js';
+import Intro4 from './Intro4.jsx';
+import { COURSES } from '../content/courses.js';
+import { COURSE as COURSE3 } from '../content/course.js';
 import { buildState } from '../learn/build.js';
-import { makeStageDemo } from '../learn/quiz.js';
+import { makeStageDemo, makeQuestion } from '../learn/quiz.js';
+import { makeStageDemo4, makeQuestion4 } from '../learn/quiz4.js';
 
-export default function CourseLesson({ index, done, onToggleDone, onBack, onGo }) {
-  const L = COURSE[index];
-  const next = COURSE[index + 1];
+export default function CourseLesson({ courseId, index, done, onToggleDone, onBack, onGo, onOpenCourse }) {
+  const course = COURSES[courseId];
+  const N = course.N;
+  const lessons = course.lessons;
+  const L = lessons[index];
+  const next = lessons[index + 1];
   const [quiz, setQuiz] = useState(false);
   const [demo, setDemo] = useState(null);
   const [demoPos, setDemoPos] = useState(0);
   const [loading, setLoading] = useState(false);
-  const goal = useMemo(() => (L.goal ? buildState(L.goal) : null), [L]);
+  const goal = useMemo(() => (L.goal ? buildState({ N, ...L.goal }) : null), [L, N]);
+  const makeDemo = N === 4 ? makeStageDemo4 : makeStageDemo;
+  const makeQ = N === 4 ? makeQuestion4 : makeQuestion;
 
   const openDemo = () => {
     setLoading(true);
-    setTimeout(() => { setDemo(makeStageDemo(L.key)); setDemoPos(0); setLoading(false); }, 30);
+    setTimeout(() => { setDemo(makeDemo(L.key)); setDemoPos(0); setLoading(false); }, 30);
   };
 
   if (demo) {
@@ -38,8 +46,8 @@ export default function CourseLesson({ index, done, onToggleDone, onBack, onGo }
   if (L.intro) {
     return (
       <main className="screen full">
-        <TopBar title="Mulai di sini" sub="Kursus Pemula 3x3" onBack={onBack} />
-        <IntroLesson />
+        <TopBar title="Mulai di sini" sub={course.title} onBack={onBack} />
+        {N === 4 ? <Intro4 /> : <IntroLesson />}
         {footer}
       </main>
     );
@@ -47,10 +55,10 @@ export default function CourseLesson({ index, done, onToggleDone, onBack, onGo }
 
   return (
     <main className="screen full">
-      <TopBar title={`Tahap ${index}: ${L.title}`} sub={`Kursus Pemula 3x3 · ${index} dari ${COURSE.length - 1}`} onBack={onBack} />
+      <TopBar title={`Tahap ${index}: ${L.title}`} sub={`${course.title} · ${index} dari ${lessons.length - 1}`} onBack={onBack} />
       <section className="lesson-goal">
         <LazyMount height={220} className="goal-cube">
-          <CubeView N={3} state={goal} view={L.goal.view || 'front'} zoom={1.25} />
+          <CubeView N={N} state={goal} view={L.goal.view || 'front'} zoom={1.25} />
         </LazyMount>
         <div>
           <h3>🎯 Tujuan</h3>
@@ -63,13 +71,30 @@ export default function CourseLesson({ index, done, onToggleDone, onBack, onGo }
         <ol className="first-steps">{L.firstSteps.map((t, i) => <li key={i}>{t}</li>)}</ol>
       </section>
 
-      <section className="lesson-sec">
-        <h3>Kalau kamu lihat ini, lakukan ini</h3>
-        <p className="muted small">Pegang kuning di atas dan hijau menghadapmu. Keping abu-abu belum penting di tahap ini.</p>
-        <div className="case-list">
-          {L.cases.map((c, i) => <CaseCard key={L.id + i} c={c} num={String.fromCharCode(65 + i)} />)}
-        </div>
-      </section>
+      {L.link3 && (
+        <section className="lesson-sec">
+          <h3>8 tahap 3x3 yang dipakai</h3>
+          <p className="muted small">Ketuk untuk membuka pelajarannya. Semua kasus & kuisnya berlaku juga untuk 4x4 yang sudah tereduksi.</p>
+          <div className="list">
+            {COURSE3.filter((l) => !l.intro).map((l, i) => (
+              <button key={l.id} className="row-item" onClick={() => onOpenCourse('3x3', i + 1)}>
+                <span className="badge-sq" style={{ background: 'var(--ink)', color: 'var(--sun)' }}>{i + 1}</span>
+                <span className="body"><b>{l.title}</b><span>{l.short}</span></span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {L.cases.length > 0 && (
+        <section className="lesson-sec">
+          <h3>Kalau kamu lihat ini, lakukan ini</h3>
+          <p className="muted small">{L.hold || 'Pegang kuning di atas dan hijau menghadapmu.'} Keping abu-abu belum penting di tahap ini.</p>
+          <div className="case-list">
+            {L.cases.map((c, i) => <CaseCard key={L.id + i} c={c} num={String.fromCharCode(65 + i)} />)}
+          </div>
+        </section>
+      )}
 
       {L.algs.length > 0 && (
         <section className="lesson-sec">
@@ -85,16 +110,18 @@ export default function CourseLesson({ index, done, onToggleDone, onBack, onGo }
 
       <section className="lesson-sec">
         <h3>Latihan</h3>
-        {QUIZ_KEYS.includes(L.key) && (quiz
-          ? <Quiz stageKey={L.key} onClose={() => setQuiz(false)} />
+        {course.quizKeys.includes(L.key) && (quiz
+          ? <Quiz stageKey={L.key} make={makeQ} onClose={() => setQuiz(false)} />
           : <button className="row-item" onClick={() => setQuiz(true)}>
               <span className="badge-sq" style={{ background: 'var(--sun)' }}>🧠</span>
-              <span className="body"><b>Kuis: kalau begini, apa langkahmu?</b><span>5 soal dari kubus acak sungguhan. Tebak dulu, lalu lihat caranya.</span></span>
+              <span className="body"><b>Kuis: kalau begini, apa langkahmu?</b><span>5 soal{N === 4 && L.key === 'centers4' ? ' tentang urutan warna center.' : ' dari kubus acak sungguhan. Tebak dulu, lalu lihat caranya.'}</span></span>
             </button>)}
-        <button className="row-item" onClick={openDemo} disabled={loading}>
-          <span className="badge-sq" style={{ background: 'var(--blue)', color: '#fff' }}>▶</span>
-          <span className="body"><b>{loading ? 'Menyiapkan contoh…' : 'Tonton contoh dari kubus acak'}</b><span>Kubus diacak, lalu hanya tahap ini yang dikerjakan langkah demi langkah.</span></span>
-        </button>
+        {L.key && (
+          <button className="row-item" onClick={openDemo} disabled={loading}>
+            <span className="badge-sq" style={{ background: 'var(--blue)', color: '#fff' }}>▶</span>
+            <span className="body"><b>{loading ? 'Menyiapkan contoh…' : 'Tonton contoh dari kubus acak'}</b><span>Kubus {N}x{N} diacak, lalu tahap ini dikerjakan langkah demi langkah.</span></span>
+          </button>
+        )}
       </section>
       {footer}
     </main>

@@ -14,7 +14,7 @@ import BottomNav from './components/BottomNav.jsx';
 import { load, save } from './storage.js';
 import { applyMoves, solvedState, randomScramble, DEFAULT_SCHEME } from './core/cube.js';
 import { rotateFace } from './core/scheme.js';
-import { COURSE } from './content/course.js';
+import { COURSES, progressKey } from './content/courses.js';
 
 function emptyDraft(N) {
   const s = new Array(6 * N * N).fill(6);
@@ -112,19 +112,21 @@ export default function App() {
   } else if (flow?.name === 'solve' && result) {
     content = <Player result={result} pos={pos} onPos={setPos} onExit={close} onNew={() => { setResult(null); setPos(0); close(); }} />;
   } else if (flow?.name === 'course') {
-    const id = COURSE[flow.index].id;
+    const cid = flow.course || '3x3';
+    const key = progressKey(cid, COURSES[cid].lessons[flow.index].id);
     content = (
-      <CourseLesson key={flow.index} index={flow.index} done={!!progress[id]}
-        onToggleDone={() => setProgress((p) => ({ ...p, [id]: !p[id] }))}
-        onBack={close}
-        onGo={(i) => { setProgress((p) => ({ ...p, [id]: true })); setFlow({ name: 'course', index: i }); }} />
+      <CourseLesson key={cid + flow.index} courseId={cid} index={flow.index} done={!!progress[key]}
+        onToggleDone={() => setProgress((p) => ({ ...p, [key]: !p[key] }))}
+        onBack={() => (flow.back ? setFlow(flow.back) : close())}
+        onGo={(i) => { setProgress((p) => ({ ...p, [key]: true })); setFlow({ name: 'course', course: cid, index: i, back: flow.back }); }}
+        onOpenCourse={(c, i) => setFlow({ name: 'course', course: c, index: i, back: { name: 'course', course: cid, index: flow.index } })} />
     );
   } else if (flow?.name === 'lesson') {
     content = <Lesson N={flow.N} method={flow.method} onBack={close} />;
   } else if (flow?.name === 'methods') {
     content = <Methods onBack={close} />;
   } else if (tab === 'learn') {
-    content = <Learn progress={progress} onCourse={(i) => setFlow({ name: 'course', index: i })} onOpen={(n, m) => setFlow({ name: 'lesson', N: n, method: m })} onMethods={() => setFlow({ name: 'methods' })} />;
+    content = <Learn progress={progress} onCourse={(c, i) => setFlow({ name: 'course', course: c, index: i })} onOpen={(n, m) => setFlow({ name: 'lesson', N: n, method: m })} onMethods={() => setFlow({ name: 'methods' })} />;
   } else if (tab === 'notation') {
     content = <Notation />;
   } else if (tab === 'tips') {
