@@ -6,9 +6,11 @@ Foto keenam sisi rubikmu → aplikasi mengenali warnanya → kamu memilih arah p
 
 ## Fitur
 
-- **Scan kamera 6 sisi** dengan panduan arah putar (kubus mini beranimasi), pratinjau warna langsung, dan cadangan unggah foto.
-- **Pengenalan warna** dengan pencocokan berkapasitas (setiap warna tepat N×N stiker) + editor stiker untuk koreksi manual.
-- **Validasi kubus**: mendeteksi sudut terpelintir, edge terbalik, dan parity yang mustahil (tanda salah scan).
+- **Scan kamera 6 sisi** dengan animasi panduan 3D yang pelan sebelum tiap foto (kubus berlabel DEPAN/ATAS/…, dilihat dari posisi kamera), penanda nama sisi di tepi bingkai foto, pratinjau warna langsung, dan cadangan unggah foto.
+- **Cek warna yang mudah dibetulkan**: putar susunan satu sisi (↺ ↻), foto ulang satu sisi saja (sisi lain & koreksimu tetap), dan editor stiker manual.
+- **Deteksi sisi terputar otomatis**: kalau ada sisi yang terfoto miring 90°/180°, aplikasi mencari putaran yang membuat susunan valid lalu membetulkannya (bisa dibatalkan).
+- **Pengenalan warna** dengan pencocokan berkapasitas (setiap warna tepat N×N stiker); foto ulang satu sisi memakai acuan warna dari 5 sisi lainnya.
+- **Validasi kubus**: sudut terpelintir, edge terbalik, parity mustahil, serta wing & center untuk 4x4/5x5.
 - **Pilih arah pegang**: tentukan warna atas & warna depan. Kubus ganjil diputar dulu (x/y/z), kubus genap membangun center sesuai pilihanmu.
 - **Solver langkah demi langkah** dengan penjelasan per langkah, sorotan keping yang sedang dikerjakan, label sisi, dan arti setiap gerakan.
 
@@ -60,8 +62,9 @@ src/
       two.js         2x2: pemula & Ortega
       bigcube.js     4x4/5x5: center (pencarian + komutator), pairing edge, parity
       algs.js        tabel rumus (divalidasi otomatis oleh tes)
-  scan/colors.js     sampling foto & klasifikasi warna
+  scan/colors.js     sampling foto & klasifikasi warna (6 sisi / satu sisi)
   three/CubeView.jsx kubus 3D (Three.js) dengan animasi lapisan
+  three/GuideCube.jsx animasi panduan memutar seluruh kubus saat scan
   components/        layar aplikasi (Beranda, Scan, Editor, Setup, Player, Belajar, …)
   content/           materi belajar, metode, tips
 tests/               tes otomatis solver, rumus, validasi, & deteksi warna

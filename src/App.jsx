@@ -12,6 +12,7 @@ import Tips from './components/Tips.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import { load, save } from './storage.js';
 import { applyMoves, solvedState, randomScramble, DEFAULT_SCHEME } from './core/cube.js';
+import { rotateFace } from './core/scheme.js';
 
 function emptyDraft(N) {
   const s = new Array(6 * N * N).fill(6);
@@ -27,6 +28,7 @@ export default function App() {
   const [flow, setFlow] = useState(null);
   const [N, setN] = useState(() => load('N', 3));
   const [draft, setDraft] = useState(null);
+  const [scanSamples, setScanSamples] = useState(null); // RGB hasil foto, untuk acuan foto ulang satu sisi
   const [scramble, setScramble] = useState(null);
   const [result, setResult] = useState(() => load('result', null));
   const [pos, setPos] = useState(() => load('pos', 0));
@@ -39,7 +41,7 @@ export default function App() {
   // tombol "kembali" perangkat menutup alur yang sedang terbuka
   useEffect(() => {
     if (!flow) return undefined;
-    const onPop = () => setFlow(null);
+    const onPop = () => setFlow(flow.name === 'scanFace' ? { name: 'edit', from: flow.from } : null);
     window.history.pushState({ flow: flow.name }, '');
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -48,7 +50,7 @@ export default function App() {
   const close = useCallback(() => setFlow(null), []);
 
   const startScan = () => { setScramble(null); setFlow({ name: 'scan' }); };
-  const startManual = () => { setScramble(null); setDraft(emptyDraft(N)); setFlow({ name: 'edit', from: 'manual' }); };
+  const startManual = () => { setScramble(null); setScanSamples(null); setDraft(emptyDraft(N)); setFlow({ name: 'edit', from: 'manual' }); };
   const startPractice = () => {
     const scr = randomScramble(N);
     setScramble(scr);
@@ -59,14 +61,48 @@ export default function App() {
 
   let content;
   if (flow?.name === 'scan') {
-    content = <ScanFlow N={N} onCancel={close} onManual={startManual} onDone={(d) => { setDraft(d); setFlow({ name: 'edit', from: 'scan' }); }} />;
+    content = (
+      <ScanFlow N={N} onCancel={close} onManual={startManual}
+        onDone={(d) => { setDraft(d.labels); setScanSamples(d.samples); setFlow({ name: 'edit', from: 'scan', check: Date.now() }); }} />
+    );
+  } else if (flow?.name === 'scanFace') {
+    const backToEdit = (check) => setFlow({ name: 'edit', from: flow.from, check, face: flow.face });
+    content = (
+      <ScanFlow key={'face' + flow.face} N={N} only={flow.face} reference={{ labels: draft, samples: scanSamples }}
+        onCancel={() => backToEdit(null)}
+        onDone={(d) => {
+          const n2 = N * N;
+          const next = draft.slice();
+          d.labels.forEach((c, i) => { next[d.face * n2 + i] = c; });
+          const smp = scanSamples ? scanSamples.slice() : new Array(6 * n2).fill(null);
+          d.samples.forEach((rgb, i) => { smp[d.face * n2 + i] = rgb; });
+          setDraft(next); setScanSamples(smp);
+          backToEdit(Date.now());
+        }} />
+    );
   } else if (flow?.name === 'edit') {
-    content = <Editor N={N} draft={draft} from={flow.from} onChange={setDraft} onBack={close} onRescan={startScan} onNext={() => setFlow({ name: 'setup' })} />;
+    content = (
+      <Editor N={N} draft={draft} from={flow.from} autoCheck={flow.check} initialFace={flow.face}
+        onChange={(next, rotations) => {
+          setDraft(next);
+          // sampel foto ikut diputar supaya tetap cocok dengan labelnya (dipakai saat foto ulang satu sisi)
+          if (rotations && rotations.length) {
+            setScanSamples((smp) => {
+              if (!smp) return smp;
+              let out = smp;
+              for (const r of rotations) for (let t = 0; t < r.turns; t++) out = rotateFace(out, N, r.face, 1);
+              return out;
+            });
+          }
+        }} onBack={close} onRescan={startScan}
+        onRescanFace={(f) => setFlow({ name: 'scanFace', face: f, from: flow.from })}
+        onNext={() => setFlow({ name: 'setup' })} />
+    );
   } else if (flow?.name === 'setup') {
     content = (
       <Setup N={N} draft={draft} scramble={scramble}
-        onBack={() => (scramble ? close() : setFlow({ name: 'edit', from: 'scan' }))}
-        onEdit={() => setFlow({ name: 'edit', from: 'scan' })}
+        onBack={() => (scramble ? close() : setFlow({ name: 'edit', from: scanSamples ? 'scan' : 'manual' }))}
+        onEdit={() => setFlow({ name: 'edit', from: scanSamples ? 'scan' : 'manual' })}
         onSolved={(r) => { setResult(r); setPos(0); setFlow({ name: 'solve' }); }} />
     );
   } else if (flow?.name === 'solve' && result) {

@@ -118,3 +118,37 @@ export function sampleGrid(ctx2d, x0, y0, size, N) {
   }
   return out;
 }
+
+/**
+ * Kenali warna SATU sisi yang difoto ulang, memakai acuan warna dari 5 sisi lain
+ * (label yang sudah dikoreksi + sampel foto aslinya) dan jumlah warna yang masih dibutuhkan.
+ */
+export function classifyFace(rgbList, face, labels, samples, N) {
+  const n2 = N * N;
+  const labs = rgbList.map((c) => rgbToLab(...c));
+  const sum = Array.from({ length: 6 }, () => [0, 0, 0, 0]);
+  const cap = new Array(6).fill(n2);
+  for (let i = 0; i < labels.length; i++) {
+    if (Math.floor(i / n2) === face) continue;
+    const c = labels[i];
+    if (c > 5) continue;
+    cap[c]--;
+    const s = samples && samples[i];
+    if (!s) continue;
+    const l = rgbToLab(...s);
+    sum[c][0] += l[0]; sum[c][1] += l[1]; sum[c][2] += l[2]; sum[c][3]++;
+  }
+  const cent = sum.map((v, c) => (v[3] ? [v[0] / v[3], v[1] / v[3], v[2] / v[3]] : PALETTE[c]));
+  const capOk = cap.every((x) => x >= 0) && cap.reduce((a, b) => a + b, 0) === n2;
+  const pairs = [];
+  labs.forEach((l, i) => { for (let k = 0; k < 6; k++) pairs.push([dist(l, cent[k]), i, k]); });
+  pairs.sort((a, b) => a[0] - b[0]);
+  const out = new Array(n2).fill(-1);
+  const left = cap.slice();
+  for (const [, i, k] of pairs) {
+    if (out[i] >= 0) continue;
+    if (capOk && left[k] <= 0) continue;
+    out[i] = k; left[k]--;
+  }
+  return out.map((k, i) => (k < 0 ? quickClassify(rgbList[i]) : k));
+}

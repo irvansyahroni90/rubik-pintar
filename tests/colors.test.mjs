@@ -17,3 +17,20 @@ for (const N of [2, 3, 4, 5]) {
   }
   console.log(`N=${N}: salah ${wrong}/${total} (${(100 * wrong / total).toFixed(2)}%)`);
 }
+
+// Foto ulang satu sisi: dikenali dengan acuan 5 sisi lain
+import { classifyFace } from '../src/scan/colors.js';
+for (const N of [2, 3, 4, 5]) {
+  let wrong = 0, total = 0;
+  for (let t = 0; t < 30; t++) {
+    const s = C.applyMoves(C.solvedState(N), N, C.randomScramble(N, undefined, rng));
+    const shot = (light, warm) => (c) => BASE[c].map((v, k) => Math.max(0, Math.min(255, v * light + (k === 0 ? warm : k === 2 ? -warm : 0) + (rng() - 0.5) * 30)));
+    const lights = [0, 1, 2, 3, 4, 5].map(() => [0.7 + rng() * 0.45, (rng() - 0.5) * 30]);
+    const samples = Array.from(s).map((c, i) => shot(...lights[Math.floor(i / (N * N))])(c));
+    const face = Math.floor(rng() * 6);
+    const fresh = Array.from(s.slice(face * N * N, (face + 1) * N * N)).map(shot(0.7 + rng() * 0.45, (rng() - 0.5) * 30));
+    const got = classifyFace(fresh, face, Array.from(s), samples, N);
+    got.forEach((c, i) => { total++; if (c !== s[face * N * N + i]) wrong++; });
+  }
+  console.log(`satu sisi N=${N}: salah ${wrong}/${total}`);
+}

@@ -1,5 +1,5 @@
 // Skema warna, orientasi pegangan, dan validasi hasil scan
-import { NORMALS, FI, FACES, applyMoves, solvedState } from './cube.js';
+import { NORMALS, FI, FACES, applyMoves, solvedState, stickerIndex } from './cube.js';
 import { st, CORNERS, EDGES, colorsAt } from './pieces.js';
 
 const COLOR_NAME = ['putih', 'kuning', 'merah', 'oranye', 'hijau', 'biru'];
@@ -91,6 +91,52 @@ function permParity(arr) {
   return p % 2;
 }
 
+// ---------- Wing (keping pinggir kubus 4x4/5x5) ----------
+// Setiap wing punya "kiralitas" tetap, jadi pasangan warnanya bisa diurutkan secara unik.
+const AX = { U: 1, D: 1, R: 0, L: 0, F: 2, B: 2 };
+const SG = { U: 1, D: -1, R: 1, L: -1, F: 1, B: -1 };
+const wingCache = new Map();
+function wingSlots(N) {
+  if (wingCache.has(N)) return wingCache.get(N);
+  const out = [];
+  const mid = N % 2 === 1 ? (N - 1) / 2 : -1;
+  for (const e of EDGES) {
+    const a1 = AX[e[0]]; const a2 = AX[e[1]];
+    const free = 3 - a1 - a2;
+    const n1 = NORMALS[FI[e[0]]]; const n2 = NORMALS[FI[e[1]]];
+    const cr = cross(n1, n2);
+    for (let i = 1; i < N - 1; i++) {
+      if (i === mid) continue;
+      const p = [0, 0, 0];
+      p[a1] = SG[e[0]] * (N - 1); p[a2] = SG[e[1]] * (N - 1); p[free] = 2 * i - (N - 1);
+      const s1 = [...p]; s1[a1] = SG[e[0]] * N;
+      const s2 = [...p]; s2[a2] = SG[e[1]] * N;
+      const off = [0, 0, 0]; off[free] = Math.sign(p[free]);
+      const pos = dot(cr, off) > 0;
+      const i1 = stickerIndex(N, s1); const i2 = stickerIndex(N, s2);
+      out.push({ edge: e, first: pos ? i1 : i2, second: pos ? i2 : i1 });
+    }
+  }
+  wingCache.set(N, out);
+  return out;
+}
+
+// Orbit center (x-center, t-center, dst.) — tiap warna harus punya jumlah sama di tiap orbit
+function centerOrbits(N) {
+  const orbits = new Map();
+  const lim = N - 1;
+  for (let r = 1; r < lim; r++) {
+    for (let c = 1; c < lim; c++) {
+      const a = Math.min(r, lim - r, c, lim - c); const b = Math.max(Math.min(r, lim - r), Math.min(c, lim - c));
+      const k = a + ',' + b;
+      if (N % 2 === 1 && r === lim / 2 && c === lim / 2) continue;
+      if (!orbits.has(k)) orbits.set(k, []);
+      orbits.get(k).push(r * N + c);
+    }
+  }
+  return [...orbits.values()];
+}
+
 export function validate(state, N) {
   const errors = [];
   const counts = new Array(6).fill(0);
@@ -109,7 +155,9 @@ export function validate(state, N) {
     if (opp.some((x) => x < 0)) return { ok: false, errors: ['Kombinasi warna sudut tidak wajar — ada sudut yang salah baca.'] };
     // skema acuan bebas: pakai warna atas = warna stiker U sudut pertama
     const cyc = cornerCycles(state, N)[0];
-    scheme = schemeFrom(state, N, cyc[0], cyc[2]);
+    try { scheme = schemeFrom(state, N, cyc[0], cyc[2]); } catch (e) {
+      return { ok: false, errors: ['Kombinasi warna sudut tidak wajar — ada sudut yang salah baca atau sisi yang terputar.'] };
+    }
   }
   // Sudut
   const solvedRef = solvedState(3, scheme);
@@ -133,6 +181,28 @@ export function validate(state, N) {
   });
   if (bad.length) errors.push(`Sudut tidak valid di posisi ${bad.join(', ')} — kemungkinan ada stiker yang salah warna.`);
   else if (twist % 3 !== 0) errors.push('Ada satu sudut yang terpelintir (twist). Cek lagi warna stiker sudut — atau sudut pernah dicopot/dipasang terbalik.');
+
+  if (N >= 4) {
+    // Wing: pasangan warna berurutan harus sama persis dengan kubus jadi
+    const ref = solvedState(N, scheme);
+    const key = (s, w) => s[w.first] + '>' + s[w.second];
+    const want = new Map();
+    for (const w of wingSlots(N)) { const k = key(ref, w); want.set(k, (want.get(k) || 0) + 1); }
+    const badW = new Set();
+    for (const w of wingSlots(N)) {
+      const k = key(state, w);
+      const n = want.get(k) || 0;
+      if (n <= 0) badW.add(w.edge); else want.set(k, n - 1);
+    }
+    if (badW.size) errors.push(`Keping pinggir (wing) tidak cocok di ${[...badW].join(', ')} — kemungkinan ada sisi yang terputar atau stiker salah warna.`);
+    // Center: tiap orbit menampung jumlah warna yang sama
+    const n2 = N * N;
+    for (const orbit of centerOrbits(N)) {
+      const cnt = new Array(6).fill(0);
+      for (let f = 0; f < 6; f++) for (const i of orbit) cnt[state[f * n2 + i]]++;
+      if (cnt.some((x) => x !== orbit.length)) { errors.push('Jumlah keping center tiap warna tidak pas — cek lagi stiker bagian tengah tiap sisi.'); break; }
+    }
+  }
 
   if (N % 2 === 1 && !bad.length) {
     // Edge tengah (3x3 / midge 5x5)
@@ -163,4 +233,62 @@ export function validate(state, N) {
     }
   }
   return { ok: errors.length === 0, errors, scheme };
+}
+
+// ---------- Putar susunan satu sisi ----------
+// dir 1 = searah jarum jam (seperti dilihat di layar), -1 = berlawanan
+export function rotateFace(state, N, face, dir = 1) {
+  const n2 = N * N;
+  const out = Array.from(state);
+  const base = face * n2;
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      const src = dir > 0 ? (N - 1 - c) * N + r : c * N + (N - 1 - r);
+      out[base + r * N + c] = state[base + src];
+    }
+  }
+  return out;
+}
+
+function rotateFaceTimes(state, N, face, k) {
+  let s = state;
+  for (let i = 0; i < k; i++) s = rotateFace(s, N, face, 1);
+  return s;
+}
+
+/**
+ * Cari sisi yang kemungkinan terfoto terputar. Mengembalikan
+ * { state, fixes: [{face, turns}] } atau null bila tidak ada perbaikan yang valid.
+ */
+export function findRotationFix(state, N) {
+  const n2 = N * N;
+  const counts = new Array(7).fill(0);
+  for (const c of state) counts[c]++;
+  if (counts[6] || counts.slice(0, 6).some((x) => x !== n2)) return null;
+  if (validate(state, N).ok) return null;
+  // Sisi yang seragam tidak perlu dicoba
+  const faces = [0, 1, 2, 3, 4, 5].filter((f) => {
+    const v = state[f * n2];
+    for (let i = 1; i < n2; i++) if (state[f * n2 + i] !== v) return true;
+    return false;
+  });
+  // urutkan: atas & bawah dulu (paling sering salah)
+  faces.sort((a, b) => (a === 0 || a === 3 ? 0 : 1) - (b === 0 || b === 3 ? 0 : 1));
+  const combos = (arr, k) => {
+    if (k === 0) return [[]];
+    const out = [];
+    arr.forEach((x, i) => { for (const rest of combos(arr.slice(i + 1), k - 1)) out.push([x, ...rest]); });
+    return out;
+  };
+  for (let k = 1; k <= faces.length; k++) {
+    for (const set of combos(faces, k)) {
+      const total = 3 ** k;
+      for (let m = 0; m < total; m++) {
+        let s = state; let mm = m; const fixes = [];
+        for (const f of set) { const t = (mm % 3) + 1; mm = Math.floor(mm / 3); s = rotateFaceTimes(s, N, f, t); fixes.push({ face: f, turns: t }); }
+        if (validate(s, N).ok) return { state: s, fixes };
+      }
+    }
+  }
+  return null;
 }
