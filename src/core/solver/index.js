@@ -53,7 +53,7 @@ export function solve(opts) {
   let ctx;
   let scheme;
   if (N % 2 === 1) {
-    ctx = new Ctx(N, state);
+    ctx = new Ctx(N, state, { capture: !!opts.capture });
     const rot = orientationMoves(state, N, top, front);
     ctx.stage('hold', 'Pegang Kubus', `Pegang kubus dengan tengah ${ce(top)} ${cn(top)} di ATAS dan ${ce(front)} ${cn(front)} MENGHADAPMU. Semua gerakan dibaca dari sudut pandang ini.`, ['Huruf besar (R, U, F…) = sisi diputar searah jarum jam bila kamu melihat sisi itu langsung.', "Tanda ' (aksen) = berlawanan arah jarum jam. Angka 2 = putar 2x."]);
     if (rot.length) ctx.step('Atur arah pegang', `Putar seluruh kubus (${rot.join(' ')}) sampai ${ce(top)} di atas dan ${ce(front)} di depan.`, rot);

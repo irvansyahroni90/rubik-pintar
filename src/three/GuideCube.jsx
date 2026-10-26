@@ -204,6 +204,7 @@ export default function GuideCube({ N, start = [], segments = [], target, swatch
       mats.forEach((m) => { m.map.dispose(); m.dispose(); });
       plane.dispose(); body.geometry.dispose(); body.material.dispose();
       renderer.dispose();
+      try { renderer.forceContextLoss(); } catch (e) { /* abaikan */ }
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

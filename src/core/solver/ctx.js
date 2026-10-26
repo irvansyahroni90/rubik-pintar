@@ -18,6 +18,7 @@ export class Ctx {
     this.stages = [];
     this.cur = null;
     this.flags = {};
+    this.capture = !!opts.capture; // simpan keadaan sebelum tiap langkah (untuk kuis belajar)
   }
 
   center(face) {
@@ -56,6 +57,8 @@ export class Ctx {
     if (!toks.length && !extra.keepEmpty) return null;
     if (!this.cur) this.stage('misc', 'Langkah', '');
     const s = { title, text, moves: toks, focus: extra.focus || [], alg: extra.alg || null, kind: extra.kind || 'move' };
+    if (extra.meta) s.meta = extra.meta;
+    if (this.capture) s.before = Array.from(this.state);
     this.cur.steps.push(s);
     this.applyRaw(toks);
     return s;

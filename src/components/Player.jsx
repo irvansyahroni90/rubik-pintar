@@ -165,7 +165,7 @@ export default function Player({ result, pos: savedPos, onPos, onExit, onNew }) 
 
   return (
     <main className="screen full">
-      <TopBar title={finished ? 'Selesai! 🎉' : stage.title} sub={`Tahap ${step.si + 1} dari ${result.stages.length} · langkah ${stepInStage}/${stage.steps.length}`} onBack={() => { stopPlay(); onExit(); }} />
+      <TopBar title={finished ? (result.stageOnly ? 'Tahap selesai' : 'Selesai! 🎉') : stage.title} sub={`Tahap ${step.si + 1} dari ${result.stages.length} · langkah ${stepInStage}/${stage.steps.length}`} onBack={() => { stopPlay(); onExit(); }} />
       <nav className="stage-strip" aria-label="Tahap" ref={stripRef}>
         {result.stages.map((s, si) => (
           <button key={si} className={si < step.si ? 'done' : ''} aria-current={si === step.si ? 'step' : undefined} onClick={() => gotoStage(si)} title={s.title}>
@@ -188,7 +188,18 @@ export default function Player({ result, pos: savedPos, onPos, onExit, onNew }) 
       </div>
       <div className="progress" aria-label={`Kemajuan ${pct}%`}><i style={{ width: pct + '%' }} /></div>
 
-      {finished ? (
+      {finished && result.stageOnly ? (
+        <section className="celebrate">
+          <div className="big" aria-hidden="true">✅</div>
+          <h2>Tahap {result.stageOnly} selesai</h2>
+          <p className="muted">Begitulah tahap ini dikerjakan dari kubus acak, dalam {result.totalMoves} gerakan. Tonton ulang pelan-pelan atau minta contoh lain.</p>
+          <div className="action-row" style={{ width: '100%' }}>
+            <button className="btn" onClick={() => jump(0, 0)}>Tonton ulang</button>
+            <button className="btn primary" onClick={onNew}>Contoh lain</button>
+          </div>
+          <button className="btn ghost" onClick={onExit}>Kembali ke pelajaran</button>
+        </section>
+      ) : finished ? (
         <section className="celebrate">
           <Confetti />
           <div className="big" aria-hidden="true">🏆</div>

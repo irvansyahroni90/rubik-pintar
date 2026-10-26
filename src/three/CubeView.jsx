@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { parseToken, applyMove, geometry, NORMALS } from '../core/cube.js';
 import { cubies } from '../core/pieces.js';
 
-export const STICKER_HEX = ['#F7F9FC', '#FFD23F', '#E8453C', '#FF8A1F', '#1FB86A', '#2F6BFF', '#C7D0E0'];
+export const STICKER_HEX = ['#F7F9FC', '#FFD23F', '#E8453C', '#FF8A1F', '#1FB86A', '#2F6BFF', '#7E899E'];
 const FACE_LABEL = ['Atas · U', 'Kanan · R', 'Depan · F', 'Bawah · D', 'Kiri · L', 'Belakang · B'];
 
 function roundedSquare(size, r) {
@@ -41,7 +41,7 @@ function labelSprite(text, k = 1) {
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-const CubeView = forwardRef(function CubeView({ N, state, focus, labels = false, autoRotate = false, interactive = true, view = 'front', className = '', onReady }, ref) {
+const CubeView = forwardRef(function CubeView({ N, state, focus, labels = false, autoRotate = false, interactive = true, view = 'front', className = '', onReady, dim = 0.55, zoom = 1 }, ref) {
   const hostRef = useRef(null);
   const api = useRef({});
 
@@ -122,7 +122,7 @@ const CubeView = forwardRef(function CubeView({ N, state, focus, labels = false,
         const m = stickerMeshes[i];
         const c = cur[i] ?? 6;
         const col = new THREE.Color(STICKER_HEX[c] || STICKER_HEX[6]);
-        if (hasFocus && !focusSet.has(i)) col.lerp(new THREE.Color('#aab4c8'), 0.5);
+        if (hasFocus && !focusSet.has(i)) col.lerp(new THREE.Color('#9aa4b8'), dim);
         m.material.color.copy(col);
         m.material.emissive.set(hasFocus && focusSet.has(i) ? 0x332200 : 0x000000);
       }
@@ -135,7 +135,7 @@ const CubeView = forwardRef(function CubeView({ N, state, focus, labels = false,
       const w = host.clientWidth || 300; const h = host.clientHeight || 300;
       const aspect = w / h;
       camera.aspect = aspect;
-      const radius = N * 0.92 + 1.15;
+      const radius = (N * 0.92 + 1.15) / zoom;
       const vfov = THREE.MathUtils.degToRad(camera.fov);
       const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect);
       const fit = Math.min(vfov, hfov);
@@ -265,6 +265,7 @@ const CubeView = forwardRef(function CubeView({ N, state, focus, labels = false,
       });
       body.dispose(); stickerGeo.dispose();
       renderer.dispose();
+      try { renderer.forceContextLoss(); } catch (e) { /* abaikan */ }
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
       api.current = {};
     };

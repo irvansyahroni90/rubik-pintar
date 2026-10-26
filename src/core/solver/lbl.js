@@ -135,7 +135,7 @@ export function stageCross(ctx) {
     const { e, sc, tf, k } = best;
     ctx.step(`Turunkan ${piece([base, sc])}`,
       `${uText(k)}Warna ${ce(sc)} di edge harus sejajar dengan tengah ${ce(sc)} (sisi ${FN[tf]}). Lalu putar sisi ${FN[tf]} 2x (${tf}2) — edge turun ke bawah.`,
-      [...uToken(k), tf + '2'], { focus: ctx.stickers(e) });
+      [...uToken(k), tf + '2'], { focus: ctx.stickers(e), meta: { type: 'crossFace', face: tf, k, color: sc } });
   }
   if (D_EDGES.some((e) => !(ctx.c(e, 'D') === base && ctx.c(e, e[1]) === ctx.center(e[1])))) throw new Error('Silang gagal');
 }
@@ -189,7 +189,7 @@ export function stageFirstCorners(ctx, opts = {}) {
     const focusPos = 'UFR';
     ctx.step(`Masukkan ${piece(c.cols)}`,
       `Ulangi ${ALG.sexy} sebanyak ${n}x sampai sudut masuk dengan ${ce(base)} menghadap bawah.`,
-      repeat(ALG.sexy, n), { focus: ctx.stickers(focusPos), alg: ALG.sexy });
+      repeat(ALG.sexy, n), { focus: ctx.stickers(focusPos), alg: ALG.sexy, meta: { type: 'sexyCount', n } });
   }
 }
 
@@ -229,7 +229,7 @@ export function stageMiddle(ctx) {
       const right = ctx.center('R') === tcol;
       ctx.step(`Masukkan ke ${right ? 'kanan' : 'kiri'}`,
         `Warna atas edge (${ce(tcol)}) cocok dengan tengah ${right ? 'kanan' : 'kiri'}, jadi pakai rumus ${right ? 'kanan' : 'kiri'}: ${right ? ALG.rightIns : ALG.leftIns}.`,
-        right ? ALG.rightIns : ALG.leftIns, { focus: ctx.stickers('UF'), alg: right ? ALG.rightIns : ALG.leftIns });
+        right ? ALG.rightIns : ALG.leftIns, { focus: ctx.stickers('UF'), alg: right ? ALG.rightIns : ALG.leftIns, meta: { type: 'middleSide', right } });
     } else {
       const k = MID_SLOTS.findIndex((p) => !edgeSolvedAt(ctx, p));
       const pos = MID_SLOTS[k];
@@ -256,7 +256,7 @@ export function stageTopCross(ctx, hooks = {}) {
       throw new Error('Orientasi edge tidak mungkin (kemungkinan salah scan)');
     }
     if (ori.length === 0) {
-      ctx.step('Pola titik', `Hanya titik tengah ${ce(top)}. Lakukan ${ALG.cross} — nanti muncul huruf L.`, ALG.cross, { alg: ALG.cross });
+      ctx.step('Pola titik', `Hanya titik tengah ${ce(top)}. Lakukan ${ALG.cross} — nanti muncul huruf L.`, ALG.cross, { alg: ALG.cross, meta: { type: 'topCross', pattern: 'dot', pre: 0 } });
       continue;
     }
     const set = new Set(ori);
@@ -270,7 +270,7 @@ export function stageTopCross(ctx, hooks = {}) {
     }
     ctx.step(isLine ? 'Pola garis' : 'Pola huruf L',
       `${uText(kk)}${isLine ? 'Pegang garisnya mendatar (kiri-kanan)' : 'Pegang huruf L di kiri & belakang (jam 9 & jam 12)'}, lalu ${ALG.cross}.`,
-      [...uToken(kk), ...ALG.cross.split(' ')], { alg: ALG.cross });
+      [...uToken(kk), ...ALG.cross.split(' ')], { alg: ALG.cross, meta: { type: 'topCross', pattern: isLine ? 'line' : 'L', pre: kk } });
   }
   throw new Error('Silang atas gagal');
 }
@@ -309,11 +309,11 @@ export function stageTopEdges(ctx, hooks = {}) {
       }
       ctx.step('2 edge bersebelahan',
         `${uText(bestK)}${yText(ky)}Dua edge yang cocok sekarang di belakang & kanan. Lakukan ${ALG.sune}.`,
-        [...uToken(bestK), ...yToken(ky), ...ALG.sune.split(' ')], { alg: ALG.sune });
+        [...uToken(bestK), ...yToken(ky), ...ALG.sune.split(' ')], { alg: ALG.sune, meta: { type: 'topEdges', kind: 'adjacent', pre: bestK } });
     } else {
       ctx.step('2 edge berseberangan',
         `${uText(bestK)}Edge yang cocok saling berseberangan. Lakukan ${ALG.sune} sekali, nanti jadi kasus bersebelahan.`,
-        [...uToken(bestK), ...ALG.sune.split(' ')], { alg: ALG.sune });
+        [...uToken(bestK), ...ALG.sune.split(' ')], { alg: ALG.sune, meta: { type: 'topEdges', kind: 'opposite', pre: bestK } });
     }
   }
   throw new Error('Edge atas gagal');
@@ -366,9 +366,9 @@ export function stageTopCornersPos(ctx, opts = {}) {
       const k = U_SLOTS.indexOf(ok[0]);
       ctx.step('Sudut patokan di kanan-depan',
         `${yText(k)}Sudut ${piece(ctx.colors(ok[0]))} sudah di tempat yang benar — jadikan patokan di kanan-depan-atas, lalu ${ALG.corners}.`,
-        [...yToken(k), ...ALG.corners.split(' ')], { alg: ALG.corners, focus: ctx.stickers(ok[0]) });
+        [...yToken(k), ...ALG.corners.split(' ')], { alg: ALG.corners, focus: ctx.stickers(ok[0]), meta: { type: 'cornerAnchor', anchor: ok[0] } });
     } else {
-      ctx.step('Belum ada sudut yang benar', `Lakukan ${ALG.corners} sekali, nanti minimal satu sudut akan benar.`, ALG.corners, { alg: ALG.corners });
+      ctx.step('Belum ada sudut yang benar', `Lakukan ${ALG.corners} sekali, nanti minimal satu sudut akan benar.`, ALG.corners, { alg: ALG.corners, meta: { type: 'cornerAnchor', anchor: null } });
     }
   }
   throw new Error('Posisi sudut gagal');
@@ -394,7 +394,7 @@ export function stageTopCornersTwist(ctx) {
     while (n < 6) { probe.applyRaw(ALG.twist); n++; if (probe.c('UFR', 'U') === top) break; }
     ctx.step(`Putar sudut ${piece(ctx.colors('UFR'))}`,
       `Ulangi ${ALG.twist} sebanyak ${n}x sampai ${ce(top)} di sudut ini menghadap atas.`,
-      repeat(ALG.twist, n), { focus: ctx.stickers('UFR'), alg: ALG.twist });
+      repeat(ALG.twist, n), { focus: ctx.stickers('UFR'), alg: ALG.twist, meta: { type: 'twistCount', n } });
   }
   // selaraskan atas
   for (let k = 0; k < 4; k++) {
